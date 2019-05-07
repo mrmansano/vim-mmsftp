@@ -4,7 +4,7 @@
 " Usage: :Hupload and :Hdownload
 "        See README for more
 " Github: https://github.com/mmansano/vim-mmsftp
-" Author: Viktor Hesselbom (hesselbom.net)
+" Author: Marcelo Mansano
 " License: MIT
 
 function! MM_GetConf()
