@@ -7,26 +7,24 @@
 " Author: Marcelo Mansano
 " License: MIT
 
-function! MM_GetConf()
-	let conf = {}
-
-	let l_configpath = expand('%:p:h')
-	let l_configfile = l_configpath . '/.hsftp'
-	let l_foundconfig = ''
-	if filereadable(l_configfile)
-		let l_foundconfig = l_configfile
+function! mmsftp#find_config_file()
+	let l:configpath = expand('%:p:h')
+	let l:configfile = l:configpath . '/.hsftp'
+	let l:foundconfig = ''
+	if filereadable(l:configfile)
+		let l:foundconfig = l:configfile
 	else
-		while !filereadable(l_configfile)
-			let slashindex = strridx(l_configpath, '/')
+		while !filereadable(l:configfile)
+			let slashindex = strridx(l:configpath, '/')
 			if slashindex >= 0
-				let l_configpath = l_configpath[0:slashindex]
-				let l_configfile = l_configpath . '.hsftp'
-				let l_configpath = l_configpath[0:slashindex-1]
-				if filereadable(l_configfile)
-					let l_foundconfig = l_configfile
+				let l:configpath = l:configpath[0:slashindex]
+				let l:configfile = l:configpath . '.hsftp'
+				let l:configpath = l:configpath[0:slashindex-1]
+				if filereadable(l:configfile)
+					let l:foundconfig = l:configfile
 					break
 				endif
-				if slashindex == 0 && !filereadable(l_configfile)
+				if slashindex == 0 && !filereadable(l:configfile)
 					break
 				endif
 			else
@@ -35,94 +33,174 @@ function! MM_GetConf()
 		endwhile
 	endif
 
-	if strlen(l_foundconfig) > 0
-		let options = readfile(l_foundconfig)
+	return l:foundconfig
+endfunction
+
+function! mmsftp#is_enabled()
+	if strlen(mmsftp#find_config_file()) > 0
+		return 1
+	else
+		return 0
+	endif
+endfunction
+
+function! mmsftp#load_config()
+	let conf = {}
+	let l:config_path = mmsftp#find_config_file()
+
+	if strlen(l:config_path) > 0
+		let options = readfile(l:config_path)
 		for i in options
 			let vname = substitute(i[0:stridx(i, ' ')], '^\s*\(.\{-}\)\s*$', '\1', '')
 			let vvalue = escape(substitute(i[stridx(i, ' '):], '^\s*\(.\{-}\)\s*$', '\1', ''), "%#!")
 			let conf[vname] = vvalue
 		endfor
 
-		let conf['local'] = fnamemodify(l_foundconfig, ':h:p') . '/'
-		let conf['localpath'] = expand('%:p')
-		let conf['remotepath'] = conf['remote'] . conf['localpath'][strlen(conf['local']):]
+		let conf['local'] = fnamemodify(l:config_path, ':h:p') . '/'
 	endif
 
 	return conf
 endfunction
 
-function! MM_Finished(channel)
-	echo 'Done!'
+if !exists('g:mmsftp#config')
+	let g:mmsftp#prompt = 'mmsftp => '
+	let g:mmsftp#command = 'scp'
+	let g:mmsftp#config = mmsftp#load_config()
+	if has_key(g:mmsftp#config, 'upload_on_save')
+		if g:mmsftp#config['upload_on_save'] == 1
+			augroup mmsftp#upload_on_save
+				au!
+				au BufWritePost * call mmsftp#upload_on_save()
+			augroup END
+		else
+			augroup mmsftp#upload_on_save
+				au!
+			augroup END
+			augroup! mmsftp#upload_on_save
+		endif
+	endif
+endif
+
+function! mmsftp#warning_message(msg)
+	echohl WarningMsg | echom g:mmsftp#prompt . a:msg | echohl None
 endfunction
 
-function! MM_OnUploadEvent(job_id, data, event) dict
+function! mmsftp#info_message(msg)
+	echom g:mmsftp#prompt . a:msg
+endfunction
+
+function! mmsftp#get_local_path()
+	return expand('%:p')
+endfunction
+
+function! mmsftp#get_remote_path()
+	let localpath = mmsftp#get_local_path()
+	return g:mmsftp#config['remote'] . localpath[strlen(g:mmsftp#config['local']):]
+endfunction
+
+function! mmsftp#finished_cb(channel)
+	mmsftp#info_message('Done!')
+endfunction
+
+function! mmsftp#on_upload_cb(job_id, data, event) dict
 	if a:event == 'stderr'
-		echom '[❌] Upload error.'
+		call mmsftp#warning_message('Upload error ')
 	else
-		echom '[✓] Finished uploading!'
+		call mmsftp#info_message('Upload finished')
 	endif
 endfunction
 
-function! MM_DiffRemote()
-	let conf = MM_GetConf()
-
-	if has_key(conf, 'host')
-		let cmd = printf('diffsplit scp://%s@%s/%s|windo wincmd H', conf['user'], conf['host'], conf['remotepath'])
+function! mmsftp#diff_remote()
+	if mmsftp#is_enabled() && has_key(g:mmsftp#config, 'host')
+		let remotepath = mmsftp#get_remote_path()
+		let cmd = printf('diffsplit scp://%s@%s/%s|windo wincmd H', g:mmsftp#config['user'], g:mmsftp#config['host'], remotepath)
 		silent execute cmd
 	endif
 endfunction
-function! MM_DownloadFile()
-	let conf = MM_GetConf()
 
-	if has_key(conf, 'host')
-		let cmd = printf('1,$d|0Nr "sftp://%s@%s/%s"', conf['user'], conf['host'], conf['remotepath'])
-		echo printf('Downloading %s from %s...', conf['remotepath'], conf['host'])
+function! mmsftp#download_file()
+	if mmsftp#is_enabled() && has_key(g:mmsftp#config, 'host')
+		let remotepath = mmsftp#get_remote_path()
+		let cmd = printf('1,$d|0Nr "sftp://%s@%s/%s"', g:mmsftp#config['user'], g:mmsftp#config['host'], remotepath)
+		call mmsftp#info_message(printf('Downloading %s from %s...', remotepath, g:mmsftp#config['host']))
 		silent execute cmd
-		echo 'Done! Saving...'
+		call mmsftp#info_message('Done! Saving...')
 		silent execute 'w'
 	endif
 endfunction
 
-function! MM_UploadFile()
-	let conf = MM_GetConf()
-
-	if has_key(conf, 'host')
-		" let cmd = printf('Nw "sftp://%s@%s/%s"', conf['user'], conf['host'], conf['remotepath'])
-		echo printf('Start uploading %s...', conf['localpath'])
-		let cmd = printf('rsync -az %s %s@%s:%s', conf['localpath'], conf['user'], conf['host'], conf['remotepath'])
+function! mmsftp#upload_file()
+	if mmsftp#is_enabled() && has_key(g:mmsftp#config, 'host')
+		let localpath = mmsftp#get_local_path()
+		let remotepath = mmsftp#get_remote_path()
+		call mmsftp#info_message(printf('Start uploading %s...', localpath))
+		let cmd = printf(g:mmsftp#command . ' %s %s@%s:%s', localpath, g:mmsftp#config['user'], g:mmsftp#config['host'], remotepath)
+		silent echom cmd
 		" silent execute cmd
-		call jobstart(cmd, {'on_stderr': function('MM_OnUploadEvent'), 'on_exit': function('MM_OnUploadEvent')})
+		call jobstart(cmd, {'on_exit': function('mmsftp#on_upload_cb')})
 	endif
 endfunction
 
-function! MM_ConnectToRemote()
-	let conf = MM_GetConf()
-
-	if has_key(conf, 'host')
-		let cmd = 'vsplit term://sshpass -p ' . conf['pass'] . ' ssh -t ' . conf['user'] . '@' . conf['host']
-		if has_key(conf, 'remote')
-			let cmd = cmd . ' \"cd ' . conf['remote'] . ' && bash\"' 
+function! mmsftp#connect_to_remote()
+	if mmsftp#is_enabled() && has_key(g:mmsftp#config, 'host')
+		let cmd = 'vsplit term://sshpass -p ' . g:mmsftp#config['pass'] . ' ssh -t ' . g:mmsftp#config['user'] . '@' . g:mmsftp#config['host']
+		if has_key(g:mmsftp#config, 'remote')
+			let cmd = cmd . ' \"cd ' . g:mmsftp#config['remote'] . ' && bash\"' 
 		endif
 		silent execute cmd
 	endif
 endfunction
 
-function! MM_CopyRemoteToBuffer()
-	let conf = MM_GetConf()
-
-	if has_key(conf, 'remote')
-		let @+=conf['remote']
+function! mmsftp#copy_remote()
+	if mmsftp#is_enabled() && has_key(g:mmsftp#config, 'remote')
+		let @+=g:mmsftp#config['remote']
 	else
-		echo 'No remote set in .hsftp'
+		call mmsftp#info_message('No remote set in .hsftp')
 	endif
 endfunction
 
-command! Hdiff call MM_DiffRemote()
-command! Hdownload call MM_DownloadFile()
-command! Hupload call MM_UploadFile()
-command! DiffRemote call MM_DiffRemote()
-command! DownloadFileFromRemote call MM_DownloadFile()
-command! UploadFileToRemote call MM_UploadFile()
-command! ConnectToRemote call MM_ConnectToRemote()
-command! CopyRemoteToBuffer call MM_CopyRemoteToBuffer()
+function! mmsftp#upload_on_save()
+	if mmsftp#is_enabled() && has_key(g:mmsftp#config, 'upload_on_save')
+		if g:mmsftp#config['upload_on_save'] == 1
+			let localpath = mmsftp#get_local_path()
+			let remotepath = mmsftp#get_remote_path()
+			call mmsftp#info_message(printf('Start uploading %s to %s...', localpath, remotepath))
+			let cmd = printf(g:mmsftp#command . ' %s %s@%s:%s', localpath, g:mmsftp#config['user'], g:mmsftp#config['host'], remotepath)
+			" silent execute cmd
+			call jobstart(cmd, {'on_exit': function('mmsftp#on_upload_cb')})
+		endif
+	endif
+endfunction
+
+function! mmsftp#configure()
+	call mmsftp#info_message('Reloading SFTP configuration')
+	let g:mmsftp#config = mmsftp#load_config()
+
+	if has_key(g:mmsftp#config, 'upload_on_save')
+		if g:mmsftp#config['upload_on_save'] == 1
+			augroup mmsftp#upload_on_save
+				au!
+				au BufWritePost * call mmsftp#upload_on_save()
+			augroup END
+		else
+			augroup mmsftp#upload_on_save
+				au!
+			augroup END
+			augroup! mmsftp#upload_on_save
+		endif
+	endif
+endfunction
+
+augroup mmsftp
+	au! BufWritePost .hsftp call mmsftp#configure()
+augroup END
+
+command! Hdiff call mmsftp#diff_remote()
+command! Hdownload call mmsftp#download_file()
+command! Hupload call mmsftp#upload_file()
+command! DiffRemote call mmsftp#diff_remote()
+command! DownloadFileFromRemote call mmsftp#download_file()
+command! UploadFileToRemote call mmsftp#upload_file()
+command! ConnectToRemote call mmsftp#connect_to_remote()
+command! CopyRemoteToBuffer call mmsftp#copy_remote()
 
