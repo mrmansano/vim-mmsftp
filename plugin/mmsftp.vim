@@ -82,11 +82,11 @@ if !exists('g:mmsftp#config')
 endif
 
 function! mmsftp#warning_message(msg)
-	echohl WarningMsg | echom g:mmsftp#prompt . a:msg | echohl None
+	echohl WarningMsg | !echo g:mmsftp#prompt . a:msg | !echohl None
 endfunction
 
 function! mmsftp#info_message(msg)
-	echom g:mmsftp#prompt . a:msg
+	echo g:mmsftp#prompt . a:msg 
 endfunction
 
 function! mmsftp#get_local_path()
@@ -133,9 +133,8 @@ function! mmsftp#upload_file()
 	if mmsftp#is_enabled() && has_key(g:mmsftp#config, 'host')
 		let localpath = mmsftp#get_local_path()
 		let remotepath = mmsftp#get_remote_path()
-		call mmsftp#info_message(printf('Start uploading %s...', localpath))
+		call mmsftp#info_message('Uploading')
 		let cmd = printf(g:mmsftp#command . ' %s %s@%s:%s', localpath, g:mmsftp#config['user'], g:mmsftp#config['host'], remotepath)
-		silent echom cmd
 		" silent execute cmd
 		call jobstart(cmd, {'on_exit': function('mmsftp#on_upload_cb')})
 	endif
@@ -164,7 +163,7 @@ function! mmsftp#upload_on_save()
 		if g:mmsftp#config['upload_on_save'] == 1
 			let localpath = mmsftp#get_local_path()
 			let remotepath = mmsftp#get_remote_path()
-			call mmsftp#info_message(printf('Start uploading %s to %s...', localpath, remotepath))
+			" call mmsftp#info_message('Uploading')
 			let cmd = printf(g:mmsftp#command . ' %s %s@%s:%s', localpath, g:mmsftp#config['user'], g:mmsftp#config['host'], remotepath)
 			" silent execute cmd
 			call jobstart(cmd, {'on_exit': function('mmsftp#on_upload_cb')})

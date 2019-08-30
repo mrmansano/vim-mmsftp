@@ -1,0 +1,37 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/ff18000/
+ConnectToRemote	plugin/mmsftp.vim	/^command! ConnectToRemote call mmsftp#connect_to_remote()$/;"	c
+CopyRemoteToBuffer	plugin/mmsftp.vim	/^command! CopyRemoteToBuffer call mmsftp#copy_remote()$/;"	c
+DiffRemote	plugin/mmsftp.vim	/^command! DiffRemote call mmsftp#diff_remote()$/;"	c
+DownloadFileFromRemote	plugin/mmsftp.vim	/^command! DownloadFileFromRemote call mmsftp#download_file()$/;"	c
+Hdiff	plugin/mmsftp.vim	/^command! Hdiff call mmsftp#diff_remote()$/;"	c
+Hdownload	plugin/mmsftp.vim	/^command! Hdownload call mmsftp#download_file()$/;"	c
+Hupload	plugin/mmsftp.vim	/^command! Hupload call mmsftp#upload_file()$/;"	c
+UploadFileToRemote	plugin/mmsftp.vim	/^command! UploadFileToRemote call mmsftp#upload_file()$/;"	c
+g:mmsftp#command	plugin/mmsftp.vim	/^	let g:mmsftp#command = 'scp'$/;"	v
+g:mmsftp#config	plugin/mmsftp.vim	/^	let g:mmsftp#config = mmsftp#load_config()$/;"	v
+g:mmsftp#prompt	plugin/mmsftp.vim	/^	let g:mmsftp#prompt = 'mmsftp => '$/;"	v
+mmsftp	plugin/mmsftp.vim	/^			augroup mmsftp#upload_on_save$/;"	a
+mmsftp	plugin/mmsftp.vim	/^augroup mmsftp$/;"	a
+mmsftp#configure	plugin/mmsftp.vim	/^function! mmsftp#configure()$/;"	f
+mmsftp#connect_to_remote	plugin/mmsftp.vim	/^function! mmsftp#connect_to_remote()$/;"	f
+mmsftp#copy_remote	plugin/mmsftp.vim	/^function! mmsftp#copy_remote()$/;"	f
+mmsftp#diff_remote	plugin/mmsftp.vim	/^function! mmsftp#diff_remote()$/;"	f
+mmsftp#download_file	plugin/mmsftp.vim	/^function! mmsftp#download_file()$/;"	f
+mmsftp#find_config_file	plugin/mmsftp.vim	/^function! mmsftp#find_config_file()$/;"	f
+mmsftp#finished_cb	plugin/mmsftp.vim	/^function! mmsftp#finished_cb(channel)$/;"	f
+mmsftp#get_local_path	plugin/mmsftp.vim	/^function! mmsftp#get_local_path()$/;"	f
+mmsftp#get_remote_path	plugin/mmsftp.vim	/^function! mmsftp#get_remote_path()$/;"	f
+mmsftp#info_message	plugin/mmsftp.vim	/^function! mmsftp#info_message(msg)$/;"	f
+mmsftp#is_enabled	plugin/mmsftp.vim	/^function! mmsftp#is_enabled()$/;"	f
+mmsftp#load_config	plugin/mmsftp.vim	/^function! mmsftp#load_config()$/;"	f
+mmsftp#on_upload_cb	plugin/mmsftp.vim	/^function! mmsftp#on_upload_cb(job_id, data, event) dict$/;"	f
+mmsftp#upload_file	plugin/mmsftp.vim	/^function! mmsftp#upload_file()$/;"	f
+mmsftp#upload_on_save	plugin/mmsftp.vim	/^function! mmsftp#upload_on_save()$/;"	f
+mmsftp#warning_message	plugin/mmsftp.vim	/^function! mmsftp#warning_message(msg)$/;"	f
+vim-mmftp	README.md	/^vim-mmftp$/;"	c
